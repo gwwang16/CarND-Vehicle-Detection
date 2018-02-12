@@ -1,4 +1,4 @@
-## Writeup Template
+## Writeup
 ---
 
 **Vehicle Detection Project**
@@ -72,7 +72,7 @@ Here is an example using GRAY color space its HOG image:
 
 ![alt text][image2]
 
-#### 2. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 2. Describe how you trained a classifier using your selected HOG features.
 
 The code for this step is in `Extract Features` and `Train Classifier` sections of `Vehicle_detection.ipnb`.
 
@@ -82,7 +82,7 @@ Then, I trained a linear SVM using [`sklearn.svm.LinearSVC`](http://scikit-learn
 
 ### Sliding Window Search
 
-#### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+#### 1. Describe how you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
 The code for this step is in `Sliding Windows` section of `Vehicle_detection.ipynb`.
 
