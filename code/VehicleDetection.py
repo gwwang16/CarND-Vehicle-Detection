@@ -167,7 +167,7 @@ class VehicleDetection():
         # 64 was the orginal sampling rate, with 8 cells and 8 pix per cell
         window = 64
         nblocks_per_window = (window // pix_per_cell) - cell_per_block + 1
-        cells_per_step = 2  # Instead of overlap, define how many cells to step
+        cells_per_step = 1  # Instead of overlap, define how many cells to step
         nxsteps = (nxblocks - nblocks_per_window) // cells_per_step + 1
         nysteps = (nyblocks - nblocks_per_window) // cells_per_step + 1
         
@@ -197,8 +197,9 @@ class VehicleDetection():
                 hist_features = self.color_hist(subimg, nbins=hist_bins)
 
                 # Scale features and make a prediction
-                test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))    
+                # test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))    
                 #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))    
+                test_features = X_scaler.transform(np.hstack((hist_features, hog_features)).reshape(1, -1))
                 test_prediction = svc.predict(test_features)
                 
                 if test_prediction == 1:
@@ -211,17 +212,12 @@ class VehicleDetection():
 
     def multi_scale(self, img, scales, svc, X_scaler):
         """Perform multiple scales searching"""
-        ystart = 400
-        ystop = 654
         draw_img = np.copy(img)
         box_lists = []
         for scale in scales:
-            if scale < 1.3:
+            if scale < 1.5:
                 ystart = 400
-                ystop = 550
-            elif scale >= 1.3 and scale < 1.5:
-                ystart = 400
-                ystop = 600
+                ystop = 580
             else:
                 ystart = 400
                 ystop = 660
@@ -260,8 +256,15 @@ class VehicleDetection():
             nonzerox = np.array(nonzero[1])
             # Define a bounding box based on min/max x and y
             bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
-            # Draw the box on the image
-            cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 8)
+            area_threshold = 300
+            w_threshold = 50
+            h_threshold = 50
+            box_w = np.max(nonzerox)-np.min(nonzerox)
+            box_h = np.max(nonzeroy)-np.min(nonzeroy)
+            box_area = box_w * box_h
+            if (box_area > area_threshold) and (box_w > w_threshold) and (box_h > h_threshold):
+                # Draw the box on the image if its area larger than threshold
+                cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 8)
         # Return the image
         return img
 

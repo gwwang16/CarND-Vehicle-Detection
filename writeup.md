@@ -55,16 +55,16 @@ These example images come from a combination of the [GTI vehicle image database]
 
   The following parameters are finally selected
 ```
-feature_params = {'orient': 9,
-                  'pix_per_cell': 8,
+feature_params = {'orient': 11,
+                  'pix_per_cell': 16,
                   'cell_per_block': 2,
                   'hog_channel': 'ALL',
                   'spatial_size': (32,32),
                   'hist_bins': 32,
-                  'spatial_feat': True,
+                  'spatial_feat': False,
                   'hist_feat': True,
                   'hog_feat': True,
-                  'color_space': 'YCrCb'}
+                  'color_space': 'YUV'}
 ```
 
 Here is an example using GRAY color space its HOG image:
@@ -76,9 +76,9 @@ Here is an example using GRAY color space its HOG image:
 
 The code for this step is in `Extract Features` and `Train Classifier` sections of `Vehicle_detection.ipnb`.
 
-The spatial binned  of color, gradient feature and HOG features are extracted using `extract_features()` ,and then they are standardized  using  [`sklearn.preprocessing.StandardScaler`](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html) package to remove the mean and scale to unit variance.
+The gradient feature and HOG features are extracted using `extract_features()` ,and then they are standardized  using  [`sklearn.preprocessing.StandardScaler`](http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html) package to remove the mean and scale to unit variance.
 
-Then, I trained a linear SVM using [`sklearn.svm.LinearSVC`](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html#sklearn-svm-linearsvc) package, the accuracy of 98.17% is achieved on test dataset.
+Then, I trained a linear SVM using [`sklearn.svm.LinearSVC`](http://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html#sklearn-svm-linearsvc) package, the accuracy of 97.47% is achieved on test dataset.
 
 ### Sliding Window Search
 
@@ -88,19 +88,16 @@ The code for this step is in `Sliding Windows` section of `Vehicle_detection.ipy
 
 `find_cars()`  extracts hog features once and then can be sub-sampled to get all of its overlaying windows. Each window is defined by a scaling factor where a scale of 1 would result in a window that's 8 x 8 cells.  Then the SVM classifier predicts whether it contains a car nor not in each window. To generate multiple-scaled search windows, different scales can be combined with each other. 
 
-After trying some combinations, scales [1, 1.3, 1.5] and `cells_per_step = 2`, a window overlap of 75%, are settled considering with false positives and calculation speed. 
+After trying some combinations, scales [1.3, 1.8] and `cells_per_step = 1, a window overlap of 75%, are settled considering with false positives and calculation speed. 
 
 ```
 def multi_scale(img, scales, svc, X_scaler, feature_params):
     draw_img = np.copy(img)
     box_lists = []
     for scale in scales:
-        if scale < 1.3:
+        if scale < 1.5:
             ystart = 400
-            ystop = 550
-        elif scale >= 1.3 and scale < 1.5:
-            ystart = 400
-            ystop = 600
+            ystop = 580
         else:
             ystart = 400
             ystop = 660
@@ -177,6 +174,29 @@ Despite of the heatmap threshold method, I also used `collections.deque` to stor
         draw_img = self.draw_labeled_bboxes(np.copy(img), labels)
         return draw_img
 ```
+A judgement condition is also added to draw box on the image only when its area, width and height are larger than thresholds.
+```
+    def draw_labeled_bboxes(self, img, labels):
+        """Draw labeled boxes"""
+        # Iterate through all detected cars
+        for car_number in range(1, labels[1]+1):
+            nonzero = (labels[0] == car_number).nonzero()
+            nonzeroy = np.array(nonzero[0])
+            nonzerox = np.array(nonzero[1])
+            bbox = ((np.min(nonzerox), np.min(nonzeroy)), (np.max(nonzerox), np.max(nonzeroy)))
+            area_threshold = 300
+            w_threshold = 50
+            h_threshold = 50
+            box_w = np.max(nonzerox)-np.min(nonzerox)
+            box_h = np.max(nonzeroy)-np.min(nonzeroy)
+            box_area = box_w * box_h
+            if (box_area > area_threshold) and (box_w > w_threshold) and (box_h > h_threshold):
+                # Draw the box on the image if its area larger than threshold
+                cv2.rectangle(img, bbox[0], bbox[1], (0,0,255), 8)
+        return img
+```
+
+
 
 Here the resulting bounding boxes are drawn onto the last frame in the series:
 
